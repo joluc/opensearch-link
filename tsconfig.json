@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": false,
+    "strict": false,
+    "outDir": "./build/opensearch-link/server",
+    "rootDir": "./server"
+  },
+  "include": ["server/**/*.ts"],
+  "exclude": ["node_modules", "build", "test"]
+}

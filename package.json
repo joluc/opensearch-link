@@ -1,0 +1,7 @@
+{
+  "name": "opensearch-link",
+  "version": "3.5.0.0",
+  "description": "Translates short parameterized URLs into OpenSearch Discover deep links",
+  "private": true,
+  "license": "Apache-2.0"
+}
