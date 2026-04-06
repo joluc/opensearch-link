@@ -12,7 +12,8 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
 echo "==> Transpiling TypeScript"
-npx -y typescript@5 tsc \
+npm install --no-save typescript@5 2>/dev/null
+npx tsc \
   --outDir "$BUILD_DIR/server" \
   --target ES2020 \
   --module commonjs \
