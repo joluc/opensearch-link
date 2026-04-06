@@ -109,6 +109,21 @@ User/Alertmanager              Plugin                          Discover
 
 If the index pattern doesn't exist, the `index` field is omitted and Discover falls back to its default.
 
+## Security Plugin
+
+If the security plugin is enabled (OpenID, SAML, or basic auth), `/api/link` will return `401 Unauthorized` by default. Add the route to the unauthenticated routes list in `opensearch_dashboards.yml`:
+
+```yaml
+opensearch_security.auth.unauthenticated_routes: ["/api/link"]
+```
+
+The redirect itself is safe to expose — it only builds a Discover URL from the query parameters. After the redirect, Discover will prompt for login as usual.
+
+> **Note:** Setting `unauthenticated_routes` overrides the default whitelist. If your health probe hits `/api/reporting/stats`, include that too:
+> ```yaml
+> opensearch_security.auth.unauthenticated_routes: ["/api/link", "/api/reporting/stats"]
+> ```
+
 ## Why Not Use the Built-in Short URL?
 
 OpenSearch Dashboards has `POST /api/shorten_url` + `/goto/{id}`, but:
