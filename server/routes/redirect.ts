@@ -7,7 +7,6 @@ export function defineRoutes(router: IRouter, core: CoreSetup, logger: Logger) {
     {
       path: '/api/link',
       validate: false,
-      options: { authRequired: 'optional' },
     },
     async (context, request, response) => {
       // OSD's request.url may be a legacy Url object (no .searchParams).
@@ -40,33 +39,29 @@ export function defineRoutes(router: IRouter, core: CoreSetup, logger: Logger) {
       let indexPatternId: string | undefined;
 
       try {
-        const soClient = context.core.savedObjects?.client;
-        if (!soClient) {
-          logger.debug('opensearch-link: no saved objects client (unauthenticated request), skipping index resolution');
-        } else {
-          const result = await soClient.find({
-            type: 'index-pattern',
-            perPage: 1000,
-          });
+        const client = context.core.savedObjects.client;
+        const result = await client.find({
+          type: 'index-pattern',
+          perPage: 1000,
+        });
 
-          if (result.total > 1000) {
-            logger.warn(
-              `opensearch-link: ${result.total} index patterns found but only first 1000 checked`
-            );
-          }
-
-          const match = result.saved_objects.find(
-            (obj: { attributes: Record<string, unknown> }) =>
-              obj.attributes.title === indexName
+        if (result.total > 1000) {
+          logger.warn(
+            `opensearch-link: ${result.total} index patterns found but only first 1000 checked`
           );
+        }
 
-          if (match) {
-            indexPatternId = match.id;
-          } else {
-            logger.warn(
-              `opensearch-link: no index pattern found for "${indexName}", redirecting without index`
-            );
-          }
+        const match = result.saved_objects.find(
+          (obj: { attributes: Record<string, unknown> }) =>
+            obj.attributes.title === indexName
+        );
+
+        if (match) {
+          indexPatternId = match.id;
+        } else {
+          logger.warn(
+            `opensearch-link: no index pattern found for "${indexName}", redirecting without index`
+          );
         }
       } catch (err) {
         logger.error(`opensearch-link: failed to resolve index pattern: ${err}`);
