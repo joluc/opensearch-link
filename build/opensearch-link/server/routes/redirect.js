@@ -10,6 +10,7 @@ function defineRoutes(router, core, logger) {
     {
       path: '/api/link',
       validate: false,
+      options: { authRequired: 'optional' },
     },
     async (context, request, response) => {
       // OSD's request.url may be a legacy Url object (no .searchParams).
@@ -42,28 +43,32 @@ function defineRoutes(router, core, logger) {
       let indexPatternId;
 
       try {
-        const client = context.core.savedObjects.client;
-        const result = await client.find({
-          type: 'index-pattern',
-          perPage: 1000,
-        });
-
-        if (result.total > 1000) {
-          logger.warn(
-            `opensearch-link: ${result.total} index patterns found but only first 1000 checked`
-          );
-        }
-
-        const match = result.saved_objects.find(
-          (obj) => obj.attributes.title === indexName
-        );
-
-        if (match) {
-          indexPatternId = match.id;
+        const soClient = context.core.savedObjects?.client;
+        if (!soClient) {
+          logger.debug('opensearch-link: no saved objects client (unauthenticated request), skipping index resolution');
         } else {
-          logger.warn(
-            `opensearch-link: no index pattern found for "${indexName}", redirecting without index`
+          const result = await soClient.find({
+            type: 'index-pattern',
+            perPage: 1000,
+          });
+
+          if (result.total > 1000) {
+            logger.warn(
+              `opensearch-link: ${result.total} index patterns found but only first 1000 checked`
+            );
+          }
+
+          const match = result.saved_objects.find(
+            (obj) => obj.attributes.title === indexName
           );
+
+          if (match) {
+            indexPatternId = match.id;
+          } else {
+            logger.warn(
+              `opensearch-link: no index pattern found for "${indexName}", redirecting without index`
+            );
+          }
         }
       } catch (err) {
         logger.error(`opensearch-link: failed to resolve index pattern: ${err}`);
