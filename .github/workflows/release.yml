@@ -1,0 +1,53 @@
+name: CI / Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+      - run: node test/test_rison.mjs
+      - run: node test/test_integration.js
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Build from source
+        run: ./build.sh
+
+      - name: Run tests against fresh build
+        run: |
+          node test/test_rison.mjs
+          node test/test_integration.js
+
+      - name: Package plugin zip
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          mkdir -p staging/opensearch-dashboards/opensearchLink
+          cp -r build/opensearch-link/* staging/opensearch-dashboards/opensearchLink/
+          cd staging
+          zip -r "../opensearch-link-${TAG}.zip" opensearch-dashboards/
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: opensearch-link-*.zip
+          generate_release_notes: true
